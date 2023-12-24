@@ -14,18 +14,7 @@ func main() {
 	godotenv.Load(".env")
 	router := chi.NewRouter()
 	port := os.Getenv("PORT")
-	if port == "" {
-		log.Fatal("PORT environment variable is not set")
-	}
-	srv := &http.Server{
-		Addr:    ":" + port,
-		Handler: router,
-	}
-	log.Printf("Listening on port %s", port)
-	err := srv.ListenAndServe()
-	if err != nil {
-		log.Fatal(err)
-	}
+
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -34,4 +23,25 @@ func main() {
 		AllowCredentials: false,
 		MaxAge:           300,
 	}))
+
+	if port == "" {
+		log.Fatal("PORT environment variable is not set")
+	}
+
+	v1Router := chi.NewRouter()
+
+	v1Router.HandleFunc("/ready", handlerReady)
+	router.Mount("/v1", v1Router)
+
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: router,
+	}
+	log.Printf("Listening on port %s", port)
+
+	err := srv.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
